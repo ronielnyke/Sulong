@@ -13,6 +13,10 @@ const FIREBASE_CONFIG={
 // If left empty, the real Google Maps still works (Google's own map, no key needed) through the Google Maps tab.
 // const GOOGLE_MAPS_KEY="YOUR_KEY";
 
+// Free all-pins Google map: create a map at mymaps.google.com, import sulong-projects.kml (button on the map page),
+// Share > "Anyone with the link", then paste the id from the link (...viewer?mid=THIS_PART) below.
+// const GOOGLE_MYMAP_ID="YOUR_MAP_ID";
+
 // The one Super Admin. This account (Google sign-in, or a verified email) is always the Super Admin.
 // The same email is also written in firestore.rules (function owner) - keep both the same.
 const SUPER_ADMIN_EMAIL="ronielnyke@gmail.com";

@@ -1,0 +1,9 @@
+{
+  "name": "sulong-civic",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SULONG - Project Recovery & Intelligence Platform",
+  "engines": {
+    "node": ">=18"
+  }
+}

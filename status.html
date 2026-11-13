@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SULONG – System check</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<style>.st{background:var(--card);border:1px solid var(--bd);border-left:6px solid #64748b;border-radius:12px;padding:12px 14px;margin-bottom:10px}.st b{display:block}.st span{color:var(--mut);font-size:13px;word-break:break-word}.st.pass{border-left-color:#16a34a}.st.fail{border-left-color:#dc2626}.st.warn{border-left-color:#d97706}</style>
+</head>
+<body>
+<div class="pubwrap" style="max-width:760px">
+  <div class="row sp"><div class="logo">▲ SULONG</div><a class="btn alt" href="index.html">Back to the system</a></div>
+  <h2 style="margin:18px 0 6px">System check</h2>
+  <p class="muted" style="margin-bottom:16px">This page tests Firebase, sign-in, the database rules and the maps from this device. A green mark means it works. If something is red, the message tells you how to fix it.</p>
+  <div id="sum" style="margin-bottom:12px;font-weight:700"></div>
+  <div id="r"></div>
+  <button class="btn" style="margin-top:8px" onclick="location.reload()">Run the check again</button>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/status.js"></script>
+</body>
+</html>

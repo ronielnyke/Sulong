@@ -32,8 +32,9 @@
   add(ok?'pass':'fail','Satellite map tiles',ok?'Satellite imagery loads.':'Satellite tiles did not load. Check the internet connection or a firewall.');
   var ok2=await img('https://tile.openstreetmap.org/10/860/450.png');
   add(ok2?'pass':'warn','Street map tiles',ok2?'Street map loads.':'Street map tiles did not load.');
-  try{var gk=(typeof GOOGLE_MAPS_KEY!=='undefined'&&GOOGLE_MAPS_KEY)||FIREBASE_CONFIG.apiKey,gr=await new Promise(function(res){var d=false;function fin(v){if(!d){d=true;res(v)}}window.gm_authFailure=function(){fin('auth')};window.__gmS=function(){setTimeout(function(){fin('ok')},1500)};var sc=document.createElement('script');sc.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(gk)+'&callback=__gmS';sc.onerror=function(){fin('net')};document.head.appendChild(sc);setTimeout(function(){fin('net')},9000)});
-   if(gr==='ok')add('pass','Google Maps','Full interactive Google Maps is active.');
+  try{var gk=(typeof GOOGLE_MAPS_KEY!=='undefined'&&GOOGLE_MAPS_KEY)||'',gr=!gk?'nokey':await new Promise(function(res){var d=false;function fin(v){if(!d){d=true;res(v)}}window.gm_authFailure=function(){fin('auth')};window.__gmS=function(){setTimeout(function(){fin('ok')},1500)};var sc=document.createElement('script');sc.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(gk)+'&callback=__gmS';sc.onerror=function(){fin('net')};document.head.appendChild(sc);setTimeout(function(){fin('net')},9000)});
+   if(gr==='nokey')add('pass','Google Maps','Real Google Maps (no API key needed) is active in the Google Maps tab of the map pages.');
+   else if(gr==='ok')add('pass','Google Maps','Full interactive Google Maps is active.');
    else if(gr==='auth')add('pass','Google Maps','Google Maps is not enabled for this key yet, so the backup satellite map is used. To switch on Google Maps: Google Cloud Console > project '+FIREBASE_CONFIG.projectId+' > enable Maps JavaScript API and billing.');
    else add('pass','Google Maps','Could not reach Google Maps from here. The backup satellite map is used.')}
   catch(e){add('pass','Google Maps','The backup satellite map is used.')}

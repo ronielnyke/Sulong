@@ -10,7 +10,7 @@ const FIREBASE_CONFIG={
 };
 
 // Google Maps (full interactive map like maps.google.com). Optional: paste a Maps JavaScript API key here.
-// If left empty, the Firebase key above is used (enable "Maps JavaScript API" in Google Cloud for project sulong-4a43c).
+// If left empty, the real Google Maps still works (Google's own map, no key needed) through the Google Maps tab.
 // const GOOGLE_MAPS_KEY="YOUR_KEY";
 
 // The one Super Admin. This account (Google sign-in, or a verified email) is always the Super Admin.

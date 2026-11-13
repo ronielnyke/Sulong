@@ -1,7 +1,8 @@
 const staffUser=()=>{const u=me();return !!u&&active(u)&&u.role!=='Public User'};
 let MF={b:new URLSearchParams(location.search).get('b')||'',s:new URLSearchParams(location.search).get('s')||''},GBQ='',MAPS=[],PM=null,PK={s:null,e:null,l:null},PMODE='start',GM_FAIL=false,GM_PROMISE=null,MT=0;
 const OWNKEY=typeof GOOGLE_MAPS_KEY!=='undefined'&&!!GOOGLE_MAPS_KEY&&!/PASTE|YOUR_KEY/i.test(GOOGLE_MAPS_KEY);
-const GKEY=OWNKEY?GOOGLE_MAPS_KEY:((typeof FIREBASE_CONFIG!=='undefined'&&FIREBASE_CONFIG.apiKey&&!/PASTE/i.test(FIREBASE_CONFIG.apiKey))?FIREBASE_CONFIG.apiKey:'');
+const GKEY=OWNKEY?GOOGLE_MAPS_KEY:'';
+let MMODE=GKEY?'osm':'google',GSEL='';
 let LASTVIEW=null;
 const GON=()=>!!GKEY&&!GM_FAIL;
 const useG=()=>!!GKEY&&!GM_FAIL&&typeof google!=='undefined'&&!!google.maps&&!!google.maps.Map;
@@ -51,6 +52,7 @@ const mapsMissing=()=>!useG()&&typeof L==='undefined';
 const MSG='<p class="muted" style="padding:20px">The map could not load. Check your internet connection.</p>';
 async function initMaps(){
  if(!$('#map')&&!$('#dmap'))return;
+ if(!GON()&&$('#gwrap')){const gs=$('#gsel');if(view==='map'&&GSEL&&gs&&gs.options&&[].some.call(gs.options,o=>o.value===GSEL))gs.value=GSEL;if(MMODE==='google')mapMode('google')}
  const tk=++MT;await loadGoogle();if(tk!==MT)return;
  const M=$('#map'),D=$('#dmap');
  if(mapsMissing()){[M,D].forEach(e=>{if(e)e.innerHTML=MSG});return}
@@ -83,6 +85,7 @@ async function initPicker(){
  const s=readPt('pla','plo')||[11,122.5];
  PK.s=PM.marker(s,'#16a34a','',true);PK.s.onDrag(()=>setPt('start',PK.s.get()));
  PM.onClick(pt=>setPt(PMODE,pt));
+ [['pla','plo'],['pea','peo']].forEach(a=>{const f=$('#'+a[0]);f.addEventListener('change',()=>{const mm=f.value.match(/^\s*(-?\d+(?:\.\d+)?)\s*[,\s]\s*(-?\d+(?:\.\d+)?)\s*$/);if(mm){f.value=mm[1];$('#'+a[1]).value=mm[2]}})});
  ['pla','plo','pea','peo'].forEach(i=>$('#'+i).addEventListener('change',()=>syncPicker(readPt('pla','plo'))));
  PM.view(s,13)}
 async function findPlace(){const q=$('#ps2').value.trim();if(!q)return;
@@ -99,18 +102,18 @@ function loadPhotos(){document.querySelectorAll('img[data-ph]').forEach(async im
  try{if(!PHOTOS[id]){const s=await fs.collection('photos').doc(id).get();PHOTOS[id]=s.exists?s.data().data:'x'}
   if(PHOTOS[id]!=='x')im.src=PHOTOS[id];else im.alt='Photo not available'}catch(e){im.alt='Photo not available'}})}
 /* ----- Google Maps tab (no API key needed: official Google embed and Google Maps links) ----- */
-const mapTabs=()=>GON()?'':'<div class="mtabs"><button class="on" data-m="osm" onclick="mapMode(\'osm\')">SULONG map</button><button data-m="google" onclick="mapMode(\'google\')">Google Maps</button></div>';
+const mapTabs=()=>GON()?'':`<div class="mtabs"><button class="${MMODE==='google'?'on':''}" data-m="google" onclick="mapMode('google')">Google Maps</button><button class="${MMODE==='osm'?'on':''}" data-m="osm" onclick="mapMode('osm')">All projects (satellite)</button></div>`;
 function gBox(list,h,bq){if(!list.length||GON())return '';GBQ=bq||'';
  const sel=(list.length>1||GBQ)?`<select id="gsel" style="flex:1;margin:0;min-width:180px" onchange="gUpdate()">${GBQ?'<option value="__b">Barangay overview on Google Maps</option>':''}${list.map(p=>`<option value="${p.id}">${esc(p.name)} – ${esc(p.barangay)}</option>`).join('')}</select>`:`<input type="hidden" id="gsel" value="${list[0].id}">`;
  return `<div id="gwrap" style="display:none"><div class="row" style="margin-bottom:8px">${sel}<label class="chk"><input type="checkbox" id="gsat" checked onchange="gUpdate()"> Satellite</label><a class="btn alt sm" id="gopen" target="_blank" rel="noopener">Open in Google Maps</a><a class="btn alt sm" id="gdir" target="_blank" rel="noopener">Directions</a></div><div class="map" style="height:${h}px;min-height:0"><iframe id="gf" title="Google Maps" style="width:100%;height:100%;border:0;border-radius:12px" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe></div>
  <div style="margin-top:10px">${list.slice(0,50).map(p=>`<div class="row sp" style="padding:6px 0;border-top:1px solid var(--bd)"><span><b>${esc(p.name)}</b> ${chip(stat(p))}</span><a class="btn alt sm" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}">View on Google Maps</a></div>`).join('')}</div></div>`}
-function gUpdate(){const v=$('#gsel').value,f=$('#gf'),sat=$('#gsat').checked?'h':'m';if(!f)return;
+function gUpdate(){const v=$('#gsel').value,f=$('#gf');if(view==='map')GSEL=v;const sat=$('#gsat').checked?'h':'m';if(!f)return;
  if(v==='__b'&&GBQ){const q=encodeURIComponent(GBQ);f.src='https://www.google.com/maps?q='+q+'&z=15&t='+sat+'&output=embed&hl=en';$('#gopen').href='https://www.google.com/maps/search/?api=1&query='+q;$('#gdir').href='https://www.google.com/maps/dir/?api=1&destination='+q;return}
  const p=DB.projects.find(x=>x.id===v);if(!p)return;
  f.src='https://www.google.com/maps?q='+p.lat+','+p.lng+'&z=17&t='+sat+'&output=embed&hl=en';
  $('#gopen').href='https://www.google.com/maps/search/?api=1&query='+p.lat+','+p.lng;
  $('#gdir').href=hasEnd(p)?'https://www.google.com/maps/dir/?api=1&origin='+p.lat+','+p.lng+'&destination='+p.endLat+','+p.endLng+'&travelmode=driving':'https://www.google.com/maps/dir/?api=1&destination='+p.lat+','+p.lng}
-function mapMode(md){const g=md==='google',A=$('#map')||$('#dmap'),W=$('#gwrap');if(!A||!W)return;
+function mapMode(md){MMODE=md;const g=md==='google',A=$('#map')||$('#dmap'),W=$('#gwrap');if(!A||!W)return;
  A.style.display=g?'none':'';W.style.display=g?'':'none';
  document.querySelectorAll('.mtabs button').forEach(b=>b.classList.toggle('on',b.dataset.m===md));
  if(g)gUpdate();else MAPS.forEach(w=>w.refresh&&w.refresh())}

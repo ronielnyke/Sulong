@@ -29,7 +29,8 @@ module.exports = async (req, res) => {
     res.statusCode = upstream.status;
     const type = upstream.headers.get('content-type');
     if (type) res.setHeader('Content-Type', type);
-    res.setHeader('Cache-Control', 'public, max-age=300');
+    if (upstream.ok) res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=86400');
+    else res.setHeader('Cache-Control', 'no-store');
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.end(body);
   } catch (e) {

@@ -14,7 +14,11 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout
 window.addEventListener('online',()=>setTimeout(keepFresh,500));
 setInterval(()=>{keepFresh();if(READY&&PLOADED&&!busy()&&!document.hidden&&view!=='map'&&view!=='detail'&&view!=='auth'){render()}},300000);
 async function proxyOK(host){
- try{const c=new AbortController(),t=setTimeout(()=>c.abort(),3500),r=await fetch('https://'+host+'/__/firebase/init.json',{cache:'no-store',signal:c.signal}),j=await r.json();clearTimeout(t);return !!(j&&j.apiKey)}catch(e){return false}}
+ const one=async()=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),9000);
+  try{const r=await fetch('https://'+host+'/__/firebase/init.json',{cache:'no-store',signal:c.signal}),j=await r.json();if(!(j&&j.apiKey))return false;
+   const h=await fetch('https://'+host+'/__/auth/iframe',{cache:'no-store',signal:c.signal});return h.ok}catch(e){return false}finally{clearTimeout(t)}};
+ if(await one())return true;
+ const ok=await one();if(!ok)console.warn('Sign-in domain '+host+' is not serving the Firebase helper files. Using the default Firebase domain instead.');return ok}
 async function initFirebase(){
  const cfg=Object.assign({},FIREBASE_CONFIG);DEFAULT_DOMAIN=cfg.projectId+'.firebaseapp.com';
  let want=(typeof AUTH_DOMAIN_OVERRIDE!=='undefined'&&AUTH_DOMAIN_OVERRIDE)||cfg.authDomain||DEFAULT_DOMAIN;

@@ -57,10 +57,10 @@ async function initMaps(){
  const tk=++MT;await loadGoogle();if(tk!==MT)return;
  const M=$('#map'),D=$('#dmap');
  if(mapsMissing()){[M,D].forEach(e=>{if(e)e.innerHTML=MSG});return}
- if(M){const m=mkMap('map',[11,122.5],9),pts=[];
+ if(M){const m=mkMap('map',[12.5,122.5],6),pts=[];
   mapList().forEach(p=>{const s=stat(p),a=[p.lat,p.lng];pts.push(a);
    if(hasEnd(p)){const b=[p.endLat,p.endLng];pts.push(b);m.line([a,b],{color:ST[s],weight:6})}
-   m.marker(a,ST[s],`<b>${esc(p.name)}</b><br>${esc(p.barangay)}${p.municipality?', '+esc(p.municipality):''}<br>${s} – ${prog(p)}%<br>${esc(forecast(p).s)}<br><a target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}">Directions (Google Maps)</a> · <a href="#" onclick="${staffUser()?`go('detail','${p.id}')`:`pubDetail('${p.id}')`};return false">${staffUser()?'Open project':'View details'}</a>`)});
+   m.marker(a,ST[s],`<b>${esc(p.name)}</b><br>${esc(p.barangay)}${p.municipality?', '+esc(p.municipality):''}${p.province?', '+esc(p.province):''}<br>${s}<br>${projMetrics(p)}<br>${esc(forecast(p).s)}<br><a target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}">Directions (Google Maps)</a> · <a href="#" onclick="${staffUser()?`go('detail','${p.id}')`:`pubDetail('${p.id}')`};return false">${staffUser()?'Open project':'View details'}</a>`)});
   if(pts.length)m.fit(pts,15);
   if(LASTVIEW){m.view(LASTVIEW.c,LASTVIEW.z);m.touched=true}}
  if(D){const p=DB.projects.find(x=>x.id===sel);if(p){const a=[p.lat,p.lng],m=mkMap('dmap',a,16),c=ST[stat(p)];
@@ -73,7 +73,7 @@ function setPt(mode,pt,center){const a=mode==='start'?['pla','plo']:['pea','peo'
 function syncPicker(focus){const s=readPt('pla','plo'),e=readPt('pea','peo');
  if(s&&e){const L=$('#pl');if(!L.value||L.dataset.auto==='1'){L.value=String(Math.round(hav(s,e)));L.dataset.auto='1'}}
  if(!PM)return;
- if(s&&PK.s)PK.s.set(s);
+ if(s){if(PK.s)PK.s.set(s);else{PK.s=PM.marker(s,'#16a34a','',true);PK.s.onDrag(()=>setPt('start',PK.s.get()))}}
  if(e){if(PK.e)PK.e.set(e);else{PK.e=PM.marker(e,'#dc2626','',true);PK.e.onDrag(()=>setPt('end',PK.e.get()))}}
  if(s&&e){if(PK.l)PK.l.set([s,e]);else PK.l=PM.line([s,e],{color:'#0f766e',weight:5})}
  if(focus)PM.view(focus,17)}
@@ -82,13 +82,13 @@ async function initPicker(){
  await loadGoogle();const el=$('#pick');if(!el)return;
  if(mapsMissing()){el.innerHTML=MSG;return}
  if(PM){PM.remove();PM=null}
- PM=mkMap('pick',[10.9,122.5],10,true);PK={s:null,e:null,l:null};
- const s=readPt('pla','plo')||[11,122.5];
- PK.s=PM.marker(s,'#16a34a','',true);PK.s.onDrag(()=>setPt('start',PK.s.get()));
+ PM=mkMap('pick',[12.5,122.5],6,true);PK={s:null,e:null,l:null};
+ const s=readPt('pla','plo');
+ if(s){PK.s=PM.marker(s,'#16a34a','',true);PK.s.onDrag(()=>setPt('start',PK.s.get()))}
  PM.onClick(pt=>setPt(PMODE,pt));
  [['pla','plo'],['pea','peo']].forEach(a=>{const f=$('#'+a[0]);f.addEventListener('change',()=>{const mm=f.value.match(/^\s*(-?\d+(?:\.\d+)?)\s*[,\s]\s*(-?\d+(?:\.\d+)?)\s*$/);if(mm){f.value=mm[1];$('#'+a[1]).value=mm[2]}})});
  ['pla','plo','pea','peo'].forEach(i=>$('#'+i).addEventListener('change',()=>syncPicker(readPt('pla','plo'))));
- PM.view(s,13)}
+ if(s)PM.view(s,13)}
 async function findPlace(){const q=$('#ps2').value.trim();if(!q)return;
  if(useG()){new google.maps.Geocoder().geocode({address:q,componentRestrictions:{country:'PH'}},(r,s)=>{if(s==='OK'&&r&&r[0]){const l=r[0].geometry.location;setPt(PMODE,[l.lat(),l.lng()],true)}else toast('Place not found.')});return}
  try{const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ph&q='+encodeURIComponent(q)),j=await r.json();if(!j.length)return toast('Place not found.');setPt(PMODE,[+j[0].lat,+j[0].lon],true)}catch(e){toast('Search failed. Check your connection.')}}
@@ -125,10 +125,18 @@ function mapMode(md){MMODE=md;const g=md==='google',A=$('#map')||$('#dmap'),W=$(
  if(g)gUpdate();else MAPS.forEach(w=>w.refresh&&w.refresh())}
 
 /* ----- map filters: barangay and status ----- */
+const fmtM=m=>m>=1000?(m/1000).toFixed(2)+' km':Math.round(m)+' m';
+const projLen=p=>p.lengthM>0?p.lengthM:(hasEnd(p)?hav([p.lat,p.lng],[p.endLat,p.endLng]):0);
+function finishEst(p){const s=stat(p),pc=prog(p);if(s==='Completed'||pc>=100)return{txt:'Completed',rate:0};
+ const t0=new Date(p.start+'T00:00:00').getTime(),lastT=p.updates.length?p.updates[0].at:t0,rate=pc/Math.max(1,(lastT-t0)/864e5);
+ if(!(rate>0))return{txt:'Cannot be estimated yet (no progress recorded)',rate:0};
+ return{txt:fmtD(Date.now()+(100-pc)/rate*864e5),rate}}
+function projMetrics(p){const pc=prog(p),L=projLen(p),f=finishEst(p),d=L*pc/100;
+ return (L>0?`Done: <b>${fmtM(d)}</b> of ${fmtM(L)} (${pc}%)<br>Remaining: <b>${fmtM(L-d)}</b><br>`+(f.rate>0?`Pace: ${fmtM(L*f.rate/100)} per day<br>`:''):`Progress: ${pc}%<br>`)+`Estimated finish: <b>${esc(f.txt)}</b><br>Target date: ${esc(p.end||'-')}`}
 const bkey=p=>(p.municipality||'-')+'|'+p.barangay;
 const mapList=()=>DB.projects.filter(p=>(!MF.b||bkey(p)===MF.b)&&(!MF.s||stat(p)===MF.s));
 function setMF(k,v){MF[k]=v;LASTVIEW=null;render()}
-function bq(){const p=MF.b?mapList()[0]||DB.projects.find(x=>bkey(x)===MF.b):null;return p?[p.barangay,p.municipality,p.province||'Iloilo','Philippines'].filter(Boolean).join(', '):''}
+function bq(){const p=MF.b?mapList()[0]||DB.projects.find(x=>bkey(x)===MF.b):null;return p?[p.barangay,p.municipality,p.province,'Philippines'].filter(Boolean).join(', '):''}
 function mapFilters(){const B={};DB.projects.forEach(p=>{B[bkey(p)]=1});const keys=Object.keys(B).sort();
  return `<div class="row" style="margin-bottom:10px"><select style="flex:1;min-width:180px;margin:0" onchange="setMF('b',this.value)"><option value="">All barangays</option>${keys.map(k=>{const a=k.split('|');return `<option value="${esc(k)}" ${k===MF.b?'selected':''}>${esc(a[1])}${a[0]!=='-'?', '+esc(a[0]):''}</option>`}).join('')}</select><select style="flex:1;min-width:150px;margin:0" onchange="setMF('s',this.value)"><option value="">All statuses</option>${Object.keys(ST).map(s=>`<option ${s===MF.s?'selected':''}>${s}</option>`).join('')}</select></div>`}
 async function mapSearch(){const q=($('#msearch').value||'').trim();if(!q)return;
@@ -137,5 +145,11 @@ async function mapSearch(){const q=($('#msearch').value||'').trim();if(!q)return
  if(useG()){new google.maps.Geocoder().geocode({address:q,componentRestrictions:{country:'PH'}},(r,s)=>{if(s==='OK'&&r&&r[0]){const l=r[0].geometry.location;go([l.lat(),l.lng()])}else toast('Place not found.')});return}
  try{const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ph&q='+encodeURIComponent(q)),j=await r.json();if(!j.length)return toast('Place not found.');go([+j[0].lat,+j[0].lon])}catch(e){toast('Search failed. Check your connection.')}}
 function mapSearchBox(){return '<div class="row" style="margin-bottom:10px"><input id="msearch" placeholder="Search any place, barangay or road" style="flex:1;margin:0;min-width:180px" onkeydown="if(event.key===\'Enter\')mapSearch()"><button class="btn sm" onclick="mapSearch()">Search</button></div>'}
+function locate(id){const p=DB.projects.find(x=>x.id===id);if(!p)return;
+ if(!GON()&&MMODE==='google'&&$('#gsel')){$('#gsel').value=id;gUpdate()}else if(MAPS[0]){MAPS[0].touched=true;MAPS[0].view([p.lat,p.lng],17)}
+ const e=$('#gwrap')&&MMODE==='google'?$('#gwrap'):$('#map');if(e)e.scrollIntoView({behavior:'smooth',block:'center'})}
+function mapTable(L){if(!L.length)return '<p class="muted" style="margin-top:12px">No projects yet. Registered projects appear here and on the map, anywhere in the Philippines.</p>';
+ return `<div style="margin-top:14px;overflow:auto;max-height:480px"><table><thead><tr><th>Project</th><th>Location</th><th>Status</th><th>Done / remaining</th><th>Estimated finish</th><th></th></tr></thead><tbody>${L.map(p=>{const pc=prog(p),Ln=projLen(p),f=finishEst(p),d=Ln*pc/100;
+  return `<tr><td><b>${esc(p.name)}</b></td><td>${esc(p.barangay)}${p.municipality?', '+esc(p.municipality):''}${p.province?', '+esc(p.province):''}</td><td>${chip(stat(p))}</td><td>${Ln>0?fmtM(d)+' / '+fmtM(Ln-d)+' ('+pc+'%)':pc+'%'}</td><td>${esc(f.txt)}<br><span class="muted" style="font-size:12px">Target ${esc(p.end||'-')}</span></td><td><button class="btn alt sm" onclick="locate('${p.id}')">Locate</button></td></tr>`}).join('')}</tbody></table></div>`}
 function mapSummary(L){const c={};L.forEach(p=>{const s=stat(p);c[s]=(c[s]||0)+1});
  return `<p style="margin:0 0 8px"><b>${L.length}</b> ${L.length===1?'project':'projects'} on the map${L.length?': ':''}${Object.keys(ST).filter(s=>c[s]).map(s=>`<span class="chip" style="background:${ST[s]}22;color:${ST[s]};margin:0 4px 4px 0">${c[s]} ${s}</span>`).join('')}</p>`}

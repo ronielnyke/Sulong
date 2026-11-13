@@ -1,13 +1,17 @@
 // Firebase web app config for project sulong-4a43c (copied exactly from the Firebase Console).
 const FIREBASE_CONFIG={
   apiKey:"AIzaSyDDJP8GG3pz6dxBIJlO4oXP4aIwuIeCA_M",
-  authDomain:"sulong-4a43c.firebaseapp.com",
+  authDomain:"sulong-civic.vercel.app",
   projectId:"sulong-4a43c",
   storageBucket:"sulong-4a43c.firebasestorage.app",
   messagingSenderId:"201911089619",
   appId:"1:201911089619:web:ebdaf553c24ad204d59726",
   measurementId:"G-PYZ9VLK429"
 };
+
+// The one Super Admin. This account (Google sign-in, or a verified email) is always the Super Admin.
+// The same email is also written in firestore.rules (function owner) - keep both the same.
+const SUPER_ADMIN_EMAIL="ronielnyke@gmail.com";
 
 // Your own address. Google sign-in shows this domain. If it is not connected to Firebase yet,
 // Google sign-in still works through the default domain above.

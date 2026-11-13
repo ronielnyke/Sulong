@@ -20,13 +20,15 @@ service cloud.firestore {
     function profile(){ return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
     function hasProfile(){ return exists(/databases/$(database)/documents/users/$(request.auth.uid)); }
     // The role counts only when the account is active (approved).
-    function role(){ return signed() && hasProfile() && profile().get('status','active') == 'active' ? profile().role : 'none'; }
+    // The Super Admin email (verified) is always Super Admin. Keep it the same as SUPER_ADMIN_EMAIL in js/firebase-config.js.
+    function owner(){ return signed() && request.auth.token.email_verified == true && request.auth.token.email.lower() == 'ronielnyke@gmail.com'; }
+    function role(){ return owner() ? 'Super Admin' : (signed() && hasProfile() && profile().get('status','active') == 'active' ? profile().role : 'none'); }
     function isAdmin(){ return role() == 'Super Admin'; }
 
     match /users/{uid} {
       allow read: if signed() && (request.auth.uid == uid || isAdmin());
       allow create: if signed() && request.auth.uid == uid && (
-        (request.resource.data.role == 'Super Admin' && request.resource.data.status == 'active' && !exists(/databases/$(database)/documents/meta/setup)) ||
+        (owner() && request.resource.data.role == 'Super Admin' && request.resource.data.status == 'active') ||
         (request.resource.data.role in ['LGU Admin','Project Manager','Inspector'] && request.resource.data.status == 'pending') ||
         (request.resource.data.role == 'Public User' && request.resource.data.status == 'active'));
       allow update, delete: if isAdmin();

@@ -15,15 +15,19 @@ async function initFirebase(){
  ACTIVE_DOMAIN=cfg.authDomain;firebase.initializeApp(cfg);auth=firebase.auth();fs=firebase.firestore();
  fs.collection('projects').onSnapshot(s=>{SYNC.p={};DB.projects=s.docs.map(d=>{const o=Object.assign({},d.data(),{id:d.id});o.updates=o.updates||[];o.milestones=o.milestones||[];SYNC.p[o.id]=JSON.stringify(o);return o});PLOADED=true;refresh()},e=>{console.error(e);PLOADED=true;toast('Cannot read projects: '+(e.code||e.message)+(e.code==='permission-denied'?'. Publish firestore.rules in the Firebase Console.':''));refresh()});
  setTimeout(()=>{if(!PLOADED){PLOADED=true;toast('Cannot reach the server. Check your internet connection.');refresh()}},8000);
- fs.collection('meta').doc('setup').get().then(s=>{HAS_ADMIN=s.exists;refresh()}).catch(()=>{HAS_ADMIN=true});
+ fs.collection('meta').doc('setup').get().then(()=>{HAS_ADMIN=true;refresh()}).catch(()=>{HAS_ADMIN=true});
  auth.onAuthStateChanged(onAuth)}
+const isOwner=fu=>!!(typeof SUPER_ADMIN_EMAIL!=='undefined'&&fu&&fu.email&&fu.emailVerified&&fu.email.toLowerCase()===SUPER_ADMIN_EMAIL.toLowerCase());
 async function ensureProfile(fu){
- const ref=fs.collection('users').doc(fu.uid),s=await ref.get();
- if(s.exists)return Object.assign({},s.data(),{id:fu.uid});
+ const ref=fs.collection('users').doc(fu.uid),s=await ref.get(),owner=isOwner(fu);
+ if(s.exists){const d=Object.assign({},s.data(),{id:fu.uid});
+  if(owner&&(d.role!=='Super Admin'||d.status!=='active')){await ref.update({role:'Super Admin',status:'active'});d.role='Super Admin';d.status='active'}
+  return d}
  const setup=fs.collection('meta').doc('setup');let prof;
- await fs.runTransaction(async t=>{const m=await t.get(setup),first=!m.exists,want=PENDING&&PENDING.role,req=['LGU Admin','Project Manager','Inspector','Public User'].includes(want)?want:'Public User';
-  prof={name:(PENDING&&PENDING.name)||fu.displayName||(fu.email||'User').split('@')[0],email:fu.email||'',role:first?'Super Admin':req,status:(first||req==='Public User')?'active':'pending',at:Date.now()};
-  if(first)t.set(setup,{by:fu.uid,at:Date.now()});t.set(ref,prof)});
+ if(!owner&&typeof SUPER_ADMIN_EMAIL!=='undefined'&&fu.email&&fu.email.toLowerCase()===SUPER_ADMIN_EMAIL.toLowerCase()&&!fu.emailVerified){try{await fu.sendEmailVerification();toast('Verify your email (check your inbox), then sign in again to become Super Admin. Or use Continue with Google.')}catch(e){}}
+ await fs.runTransaction(async t=>{const m=await t.get(setup),want=PENDING&&PENDING.role,req=['LGU Admin','Project Manager','Inspector','Public User'].includes(want)?want:'Public User';
+  prof={name:(PENDING&&PENDING.name)||fu.displayName||(fu.email||'User').split('@')[0],email:fu.email||'',role:owner?'Super Admin':req,status:(owner||req==='Public User')?'active':'pending',at:Date.now()};
+  if(owner&&!m.exists)t.set(setup,{by:fu.uid,at:Date.now()});t.set(ref,prof)});
  PENDING=null;NEWACC=true;HAS_ADMIN=true;return Object.assign({},prof,{id:fu.uid})}
 async function onAuth(fu){
  unsubs.forEach(f=>f());unsubs=[];

@@ -11,7 +11,7 @@
   if(typeof firebase==='undefined'){add('fail','Firebase scripts','The Firebase scripts did not load. Check the internet connection or any ad blocker.');return}
   var app,auth,fs;
   try{app=firebase.initializeApp(FIREBASE_CONFIG);auth=firebase.auth();fs=firebase.firestore();add('pass','Firebase start','Firebase started.')}catch(e){add('fail','Firebase start',e.message);return}
-  try{var s=await fs.collection('meta').doc('setup').get();add('pass','Database and rules (setup)',s.exists?'Connected. A Super Admin already exists.':'Connected. No Super Admin yet: the first account that registers becomes the Super Admin.')}
+  try{var s=await fs.collection('meta').doc('setup').get();add('pass','Database and rules (setup)',s.exists?'Connected. A Super Admin already exists.':'Connected. The Super Admin ('+SUPER_ADMIN_EMAIL+') has not signed in yet.')}
   catch(e){add('fail','Database and rules (setup)',e.code==='permission-denied'?'Permission denied. Publish the latest firestore.rules in Firebase Console > Firestore Database > Rules.':(e.code==='unavailable'||e.code==='not-found'||e.code==='failed-precondition')?'Cannot reach Firestore. Create the Firestore database in the Firebase Console, then reload. ('+e.code+')':(e.code||e.message))}
   try{var p=await fs.collection('projects').limit(1).get();add('pass','Database and rules (projects)','Projects can be read ('+p.size+' found in the first check).')}
   catch(e){add('fail','Database and rules (projects)',e.code==='permission-denied'?'Permission denied. Publish the latest firestore.rules.':(e.code||e.message))}

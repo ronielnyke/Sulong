@@ -1,6 +1,6 @@
 /* ---------- modal + sample ---------- */
 function openModal(h){$('#modal').innerHTML=`<div class="card">${h}</div>`;$('#modal').classList.add('on')}
-function closeModal(){if(PM){PM.remove();PM=null;PK={s:null,e:null,l:null}}$('#modal').classList.remove('on');$('#modal').innerHTML=''}
+function closeModal(){if(PM){PM.remove();PM=null;PK={s:null,e:null,l:null}}$('#modal').classList.remove('on');$('#modal').innerHTML='';setTimeout(()=>{if(typeof keepFresh==='function')keepFresh()},300)}
 $('#modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
 function sample(){if(!confirm('This adds 7 sample projects to your live database. Continue?'))return;const u=me(),t=n=>Date.now()-n*864e5;

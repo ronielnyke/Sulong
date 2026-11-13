@@ -4,7 +4,15 @@ const SYNC={p:{},u:{}};
 function setupHTML(){return `<div class="pubwrap" style="max-width:640px"><div class="card" style="margin-top:8vh"><h2>Connect Firebase</h2><p class="muted" style="margin:8px 0">${FBERR?esc(FBERR):'Firebase is not configured yet.'}</p><ol style="padding-left:18px;line-height:1.9"><li>Open <b>js/firebase-config.js</b></li><li>Paste your Firebase web app config</li><li>Save and refresh this page</li></ol></div>${foot()}</div>`}
 let LASTSIG='';
 const dataSig=()=>JSON.stringify([DB.projects,DB.users,DB.audit.map(a=>a.id||a.at),DB.session,READY,PLOADED,HAS_ADMIN]);
-function refresh(){const a=document.activeElement;if($('#modal').classList.contains('on')||(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)))return;if(READY&&PLOADED&&dataSig()===LASTSIG)return;render()}
+let DEFER=false;
+function busy(){const a=document.activeElement;return $('#modal').classList.contains('on')||(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))}
+function refresh(){if(busy()){DEFER=true;return}if(READY&&PLOADED&&dataSig()===LASTSIG)return;DEFER=false;render()}
+/* Automatic refresh: live data comes from Firestore listeners; this makes sure a refresh that was held back (while typing or a form was open) happens right after, and when the tab or the internet comes back. */
+function keepFresh(){if(DEFER&&!busy())refresh()}
+document.addEventListener('focusout',()=>setTimeout(keepFresh,300));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(keepFresh,200)});
+window.addEventListener('online',()=>setTimeout(keepFresh,500));
+setInterval(()=>{keepFresh();if(READY&&PLOADED&&!busy()&&!document.hidden&&view!=='map'&&view!=='detail'&&view!=='auth'){render()}},300000);
 async function proxyOK(host){
  try{const c=new AbortController(),t=setTimeout(()=>c.abort(),3500),r=await fetch('https://'+host+'/__/firebase/init.json',{cache:'no-store',signal:c.signal}),j=await r.json();clearTimeout(t);return !!(j&&j.apiKey)}catch(e){return false}}
 async function initFirebase(){

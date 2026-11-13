@@ -9,6 +9,10 @@ const FIREBASE_CONFIG={
   measurementId:"G-PYZ9VLK429"
 };
 
+// Google Maps (full interactive map like maps.google.com). Optional: paste a Maps JavaScript API key here.
+// If left empty, the Firebase key above is used (enable "Maps JavaScript API" in Google Cloud for project sulong-4a43c).
+// const GOOGLE_MAPS_KEY="YOUR_KEY";
+
 // The one Super Admin. This account (Google sign-in, or a verified email) is always the Super Admin.
 // The same email is also written in firestore.rules (function owner) - keep both the same.
 const SUPER_ADMIN_EMAIL="ronielnyke@gmail.com";

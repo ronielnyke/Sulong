@@ -8,6 +8,7 @@ function render(){
  LASTSIG=dataSig();
  if(!FB_OK||FBERR){$('#root').innerHTML=setupHTML();return}
  if(!READY||!PLOADED){$('#root').innerHTML='<div class="load"><div class="spin"></div><b>SULONG</b></div>';return}
+ if(view==='map'&&MAPS[0]&&MAPS[0].touched&&MAPS[0].getView){try{LASTVIEW=MAPS[0].getView()}catch(e){}}
  MAPS.forEach(m=>{try{m.remove()}catch(e){}});MAPS=[];
  const u=me();
  if(!u&&view!=='public'&&view!=='auth'){location.replace('index.html');return}
